@@ -69,5 +69,3 @@ app.get("/" , (req,res) => {
 app.listen(PORT, () => {
   console.log(`Backend is runnning ${process.env.PORT}`);
 });
-
-module.exports = app;
