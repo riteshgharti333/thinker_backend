@@ -16,12 +16,18 @@ const app = express();
 app.use(express.json());
 // const PORT = process.env.PORT || 3000
 
-const corsOptions = {
-  origin: 'http://localhost:5173', // Replace with your frontend's URL
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-};
+// const corsOptions = {
+//   origin: 'http://localhost:5173', // Replace with your frontend's URL
+//   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+// };
 
-app.use(cors(corsOptions));
+app.use(
+  cors({
+      origin: [process.env.FRONTEND_URL],
+      methods: ["GET", "POST", "PUT", "DELETE"],
+      credentials: true,
+  })
+)
 
 app.use("/images", express.static(path.join(__dirname, "/images")));
 
