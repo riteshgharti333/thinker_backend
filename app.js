@@ -59,9 +59,11 @@ app.use("/api/categories", categoryRoute);
 
 
 app.get("/" , (req,res) => {
-  res.send("Welcome to BLOG ONCE");
+  res.send("Welcome to Thinker.");
 })
 
 app.listen(PORT, () => {
   console.log(`Backend is runnning ${process.env.PORT}`);
 });
+
+module.exports = app;
