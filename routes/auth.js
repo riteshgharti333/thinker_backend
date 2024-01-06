@@ -6,8 +6,7 @@ const bcrypt = require("bcrypt");
 router.post("/register", async (req, res) => {
   try {
     const salt = await bcrypt.genSalt(10);
-    const hashedPass = await bcrypt.hash(req.body.
-    password , salt);
+    const hashedPass = await bcrypt.hash(req.body.password, salt);
 
     const newUser = new User({
       username: req.body.username,
@@ -15,14 +14,14 @@ router.post("/register", async (req, res) => {
       password: hashedPass,
     });
 
-    let findUser = await User.findOne({email : req.body.email});
+    let findUser = await User.findOne({ email: req.body.email });
 
-    if(findUser) return  res.status(400).json("User already exist");
+    if (findUser) return res.status(400).json("User already exist");
 
     const user = await newUser.save();
     res.status(200).json({
       message: "Register Successfully",
-      user
+      user,
     });
   } catch (err) {
     res.status(500).json(err);
@@ -31,23 +30,22 @@ router.post("/register", async (req, res) => {
 
 // log in
 
-router.post("/login" , async (req , res) => {
-  try{
-    const user = await User.findOne({email: req.body.email})
+router.post("/login", async (req, res) => {
+  try {
+    const user = await User.findOne({ email: req.body.email });
 
-    if(!user) return res.status(400).json("Invalid Email or Password");
+    if (!user) return res.status(400).json("Invalid Email or Password");
 
-    const validated = await bcrypt.compare(req.body.password , user.password);
+    const validated = await bcrypt.compare(req.body.password, user.password);
 
-    if(!validated) return res.status(400).json("wrong credentials !")
+    if (!validated) return res.status(400).json("wrong credentials !");
 
-    const {password , ...others} = user._doc;
+    const { password, ...others } = user._doc;
 
     res.status(200).json(others);
-
-  }catch(err){
+  } catch (err) {
     res.status(400).json(err);
   }
-})
+});
 
 module.exports = router;
