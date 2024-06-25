@@ -4,6 +4,7 @@ const Post = require("../models/Post");
 const bcrypt = require("bcrypt");
 
 //UPDATE
+
 router.put("/:id", async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
@@ -11,41 +12,34 @@ router.put("/:id", async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Check if the provided password matches the current password
-    const passwordMatch = await bcrypt.compare(
-      req.body.currentPassword,
-      user.password,
+    // Check if a new password is provided and hash it
+    if (req.body.newPassword) {
+      const salt = await bcrypt.genSalt(10);
+      req.body.newPassword = await bcrypt.hash(req.body.newPassword, salt);
+    }
+
+    const updatedFields = {
+
+      ...(req.body.username && { username: req.body.username }),
+      ...(req.body.email && { email: req.body.email }),
+      ...(req.body.profilepic && { profilepic: req.body.profilepic }),
+
+      ...(req.body.newPassword && { password: req.body.newPassword }),
+      ...(req.body.newPassword && { password: req.body.newPassword }),
+
+      // Add other fields as needed
+    };
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      { $set: updatedFields },
+      { new: true }
     );
 
-    if (passwordMatch) {
-      // If the password matches, proceed with the update
-      if (req.body.newPassword) {
-        // If a new password is provided, hash it
-        const salt = await bcrypt.genSalt(10);
-        req.body.newPassword = await bcrypt.hash(req.body.newPassword, salt);
-      }
-
-      const updatedUser = await User.findByIdAndUpdate(
-        req.params.id,
-        {
-          $set: {
-            // Update only the fields that are provided
-            ...(req.body.username && { username: req.body.username }),
-            ...(req.body.email && { email: req.body.email }),
-            ...(req.body.newPassword && { password: req.body.newPassword }),
-            // Add other fields as needed
-          },
-        },
-        { new: true },
-      );
-
-      res.status(200).json({
-        message: "User updated successfully!",
-        updatedUser,
-      });
-    } else {
-      res.status(401).json("Incorrect password.");
-    }
+    res.status(200).json({
+      message: "User updated successfully!",
+      updatedUser,
+    });
   } catch (err) {
     res.status(500).json(err);
   }
@@ -83,5 +77,40 @@ router.get("/:id", async (req, res) => {
     res.status(500).json(err);
   }
 });
+
+
+// GET ALL BLOGS OF A USER
+router.get("/:userId/posts", async (req, res) => {
+  try {
+    const posts = await Post.find({ userId: req.params.userId }).sort({ createdAt: -1 }).populate('username', 'username email');
+    const postCount = await Post.countDocuments({ userId: req.params.userId });
+
+    if (!posts.length) {
+      return res.status(404).json("No posts found for this user");
+    }
+
+    res.status(200).json({ postCount, posts });
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
+
+
+// GET USER'S POSTS AND COUNT
+router.get("/:userId/postcount", async (req, res) => {
+  try {
+    const posts = await Post.find({ username: req.params.userId }).sort({ createdAt: -1 }).populate('username', 'username email');
+    if (!posts) {
+      return res.status(404).json("No posts found for this user");
+    }
+    const postCount = posts.length; // Get the count of posts
+    res.status(200).json({ postCount, posts });
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
+
+
+
 
 module.exports = router;

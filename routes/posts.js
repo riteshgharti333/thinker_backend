@@ -4,11 +4,23 @@ const User = require("../models/User");
 
 //CREATE POST
 router.post("/", async (req, res) => {
-  const newPost = new Post(req.body);
+
+ // Destructure userId and username from req.body
+ const { userId, username, ...postDetails } = req.body;
+
+ // Create a new post with the userId and username
+ const newPost = new Post({
+   ...postDetails,
+   userId,
+   username
+ });
+
   try {
     const savedPost = await newPost.save();
 
-    const user = await User.findOne({ username: req.body.username });
+    await User.findByIdAndUpdate(req.body.userId , {
+      $push: {postId : savedPost._id}
+    });
 
     res.status(200).json({
       message: "Post Created",
@@ -31,7 +43,7 @@ router.put("/:id", async (req, res) => {
           {
             $set: req.body,
           },
-          { new: true },
+          { new: true }
         );
         res.status(200).json({
           message: "Post Updated",
@@ -57,7 +69,7 @@ router.delete("/:id", async (req, res) => {
       return res.status(404).json("Post not found");
     }
 
-    if (post.username === req.body.username) {
+    if (post.userId.toString() === req.body.userId) {
       try {
         await post.deleteOne();
         res.status(200).json("Post has been deleted...");
@@ -93,6 +105,7 @@ router.get("/:id", async (req, res) => {
     res.status(500).json(err);
   }
 });
+
 // GET ALL POST
 router.get("/", async (req, res) => {
   const username = req.query.user;
@@ -115,5 +128,7 @@ router.get("/", async (req, res) => {
     res.status(500).json(err);
   }
 });
+
+
 
 module.exports = router;

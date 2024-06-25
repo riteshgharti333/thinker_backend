@@ -5,6 +5,7 @@ const authRoute = require("./routes/auth");
 const userRoute = require("./routes/users");
 const postRoute = require("./routes/posts");
 const categoryRoute = require("./routes/categories");
+const passwordRoute = require("./routes/password");
 const multer = require("multer");
 const path = require("path");
 const cors = require("cors");
@@ -14,7 +15,7 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
-const PORT = process.env.PORT || 3000
+const PORT = process.env.PORT || 3000;
 
 const corsOptions = {
   origin: 'http://localhost:5173', // Replace with your frontend's URL
@@ -60,6 +61,9 @@ app.use("/api/posts", postRoute);
 app.use("/api/auth", authRoute);
 app.use("/api/profile", userRoute);
 app.use("/api/categories", categoryRoute);
+app.use("/api/changepassword" , passwordRoute);
+app.use("/api/user" , userRoute);
+
 
 app.get("/", (req, res) => {
   res.send("Welcome to Thinker.");
