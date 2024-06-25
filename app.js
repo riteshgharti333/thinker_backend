@@ -17,10 +17,10 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 
-const corsOptions = {
-  origin: 'http://localhost:5173', // Replace with your frontend's URL
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-};
+// const corsOptions = {
+//   origin: 'http://localhost:5173', // Replace with your frontend's URL
+//   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+// };
 
 app.use(
   cors({
