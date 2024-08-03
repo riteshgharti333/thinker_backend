@@ -4,7 +4,7 @@ const PostSchema = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      required: true,
+      required: false,
       ref: 'User'
     },
     title: {
@@ -20,16 +20,19 @@ const PostSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    username: {
-      type: String,
+    username: { 
+      type: String, 
       required: true
     },
     categories: {
       type: Array,
       required: false,
     },
+    views: { 
+      type: Number,
+      default: 0
+    },
   },
-
   { timestamps: true }
 );
 

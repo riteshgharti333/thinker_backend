@@ -22,39 +22,39 @@ const PORT = process.env.PORT || 3000;
 //   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
 // };
 
-app.use(
-  cors({
-      origin: [process.env.FRONTEND_URL],
-      methods: ["GET", "POST", "PUT", "DELETE"],
-      credentials: true,
-  })
-)
+// app.use(
+//   cors({
+//       origin: [process.env.FRONTEND_URL],
+//       methods: ["GET", "POST", "PUT", "DELETE"],
+//       credentials: true,
+//   })
+// )
 
-// app.use(cors());
+app.use(cors());
 
 app.use("/images", express.static(path.join(__dirname, "/images")));
 
 // const PORT = process.env.PORT || 8000;
 
 mongoose
-  .connect(process.env.MONGO_URL, {})
-  .then(() => console.log("DB Connection Successfull!"))
-  .catch((err) => {
-    console.log(err);
-  });
+.connect(process.env.MONGO_URL, {})
+.then(() => console.log("DB Connection Successfull!"))
+.catch((err) => {
+  console.log(err);
+});
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "images");
-  },
-  filename: (req, file, cb) => {
-    cb(null, req.body.name);
-  },
+destination: (req, file, cb) => {
+  cb(null, "images");
+},
+filename: (req, file, cb) => {
+  cb(null, req.body.name);
+},
 });
 
 const upload = multer({ storage: storage });
 app.post("/api/upload", upload.single("file"), (req, res) => {
-  res.status(200).json("File has been Uploaded");
+res.status(200).json("File has been Uploaded");
 });
 
 app.use("/api/posts", postRoute);
@@ -66,9 +66,9 @@ app.use("/api/user" , userRoute);
 
 
 app.get("/", (req, res) => {
-  res.send("Welcome to Thinker.");
+res.send("Welcome to Thinker.");
 });
 
 app.listen(PORT, () => {
-  console.log(`Backend is runnning ${process.env.PORT}`);
+console.log(`Backend is runnning ${process.env.PORT}`);
 });
