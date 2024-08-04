@@ -3,12 +3,20 @@ const User = require("../models/User");
 const Post = require("../models/Post");
 const bcrypt = require("bcrypt");
 
-//UPDATE
+
 router.put("/:id", async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if the email is being updated
+    if (req.body.email && req.body.email !== user.email) {
+      const existingUser = await User.findOne({ email: req.body.email });
+      if (existingUser) {
+        return res.status(400).json({ message: "Email already in use" });
+      }
     }
 
     // Check if a new password is provided and hash it
@@ -50,6 +58,8 @@ router.put("/:id", async (req, res) => {
     res.status(500).json(err);
   }
 });
+
+
 
 
 //DELETE
