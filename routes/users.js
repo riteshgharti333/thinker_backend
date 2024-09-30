@@ -1,17 +1,15 @@
 const router = require("express").Router();
 const User = require("../models/User");
 const Post = require("../models/Post");
-const bcrypt = require("bcrypt");
-
 
 router.put("/:id", async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
+
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Check if the email is being updated
     if (req.body.email && req.body.email !== user.email) {
       const existingUser = await User.findOne({ email: req.body.email });
       if (existingUser) {
@@ -19,34 +17,24 @@ router.put("/:id", async (req, res) => {
       }
     }
 
-    // Check if a new password is provided and hash it
-    if (req.body.newPassword) {
-      const salt = await bcrypt.genSalt(10);
-      req.body.newPassword = await bcrypt.hash(req.body.newPassword, salt);
-    }
-
     const updatedFields = {
       ...(req.body.username && { username: req.body.username }),
       ...(req.body.email && { email: req.body.email }),
       ...(req.body.profilepic && { profilepic: req.body.profilepic }),
-      ...(req.body.newPassword && { password: req.body.newPassword }),
     };
 
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
       { $set: updatedFields },
-      { new: true }
+      { new: true },
     );
 
-    // Update the user's posts with new username or profile picture
-    if (req.body.username || req.body.profilepic) {
-      const updatePostFields = {};
-      if (req.body.username) updatePostFields.username = req.body.username;
-      if (req.body.profilepic) updatePostFields.userProfilePic = req.body.profilepic;
+    // Update the user's posts
 
+    if (req.body.username) {
       await Post.updateMany(
         { userId: req.params.id },
-        { $set: updatePostFields }
+        { $set: { username: req.body.username } },
       );
     }
 
@@ -58,9 +46,6 @@ router.put("/:id", async (req, res) => {
     res.status(500).json(err);
   }
 });
-
-
-
 
 //DELETE
 router.delete("/:id", async (req, res) => {
@@ -75,6 +60,7 @@ router.delete("/:id", async (req, res) => {
         res.status(500).json(err);
       }
     } catch (err) {
+      console.log(err)
       res.status(404).json("User not found!");
     }
   } else {
@@ -87,38 +73,42 @@ router.get("/:id", async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
 
-    if (!user) return res.status(200).json("User not found!");
+    if (!user) return res.status(404).json("User not found!");
     const { ...others } = user._doc;
     res.status(200).json(others);
-  } catch {
+  } catch(err) {
     res.status(500).json(err);
   }
 });
 
-
 // GET ALL BLOGS OF A USER
 router.get("/:userId/posts", async (req, res) => {
   try {
-    const posts = await Post.find({ userId: req.params.userId }).sort({ createdAt: -1 }).populate('username', 'username email');
+    // Find the user by userId
+    const user = await User.findById(req.params.userId);
 
-    const postCount = await Post.countDocuments({ userId: req.params.userId });
+    // Check if the user exists
+    if (!user) return res.status(404).json("User not found!");
 
-    if (!posts.length) {
-      return res.status(404).json({ message: "No posts found of this user" });
-    }
+    // Fetch all posts for the given userId
+    const posts = await Post.find({ userId: req.params.userId });
 
+    // Count the number of posts
+    const postCount = posts.length;
+
+    // Return the count and posts
     res.status(200).json({ postCount, posts });
   } catch (err) {
     res.status(500).json(err);
   }
 });
 
-
-
 // GET USER'S POSTS AND COUNT
 router.get("/:userId/postcount", async (req, res) => {
   try {
-    const posts = await Post.find({ username: req.params.userId }).sort({ createdAt: -1 }).populate('username', 'username email');
+    const posts = await Post.find({ username: req.params.userId })
+      .sort({ createdAt: -1 })
+      .populate("username", "username email");
     if (!posts) {
       return res.status(404).json("No posts found for this user");
     }
@@ -128,8 +118,5 @@ router.get("/:userId/postcount", async (req, res) => {
     res.status(500).json(err);
   }
 });
-
-
-
 
 module.exports = router;

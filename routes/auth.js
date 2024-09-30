@@ -16,14 +16,23 @@ router.post("/register", async (req, res) => {
 
     let findUser = await User.findOne({ email: req.body.email });
 
-    if (findUser) return res.status(400).json("User already exist");
+    if (findUser) {
+      return res.status(400).json({ message: "User already exists." });
+    }
 
     const user = await newUser.save();
+
     res.status(200).json({
       message: "Register Successfully",
       user,
     });
   } catch (err) {
+    if (err.code === 11000) {
+      const duplicateField = Object.keys(err.keyPattern)[0];
+      return res
+        .status(400)
+        .json({ message: `Duplicate value found for ${duplicateField}.` });
+    }
     res.status(500).json(err);
   }
 });
@@ -38,7 +47,7 @@ router.post("/login", async (req, res) => {
 
     const validated = await bcrypt.compare(req.body.password, user.password);
 
-    if (!validated) return res.status(400).json("wrong credentials !");
+    if (!validated) return res.status(400).json("Invalid Email or Password");
 
     const { password, ...others } = user._doc;
 

@@ -4,104 +4,56 @@ const Post = require("../models/Post");
 const User = require("../models/User");
 const moment = require("moment");
 
-
 // GET TRENDING POSTS
 router.get("/trending", async (req, res) => {
   try {
-    const fiveDaysAgo = moment().subtract(5, 'days').toDate();
-    const recentPosts = await Post.find({ createdAt: { $gte: fiveDaysAgo } });
-    const sortedPosts = recentPosts.sort((a, b) => b.views - a.views);
-    const mostTrendingPost = sortedPosts.shift(); // Remove the first element from the array
-    const remainingPosts = sortedPosts.slice(0, 9); // Get the top 9 remaining posts
+    const fiveDaysAgo = moment().subtract(5, "days").toDate();
 
-    res.status(200).json({ mostTrendingPost, remainingPosts });
+    // Fetch posts created in the last 5 days
+    let recentPosts = await Post.find({
+      createdAt: { $gte: fiveDaysAgo },
+    }).sort({ views: -1 });
+
+    // If no recent posts, fetch top 10 posts overall by views
+    if (recentPosts.length === 0) {
+      recentPosts = await Post.find().sort({ views: -1 });
+    }
+
+    // Return the trending posts (either from the last 5 days or the top 10 overall)
+    res.status(200).json({ trendingPosts: recentPosts });
   } catch (err) {
     console.error("Error fetching trending posts:", err);
-    res.status(500).json({ error: "Internal server error", details: err.message });
-  }
-});
-
-// TOP TRENDING POSTS 
-router.get("/top-posts", async (req, res) => {
-  try {
-    const fiveDaysAgo = moment().subtract(5, 'days').toDate();
-    const recentPosts = await Post.find({ createdAt: { $gte: fiveDaysAgo } });
-    const sortedPosts = recentPosts.sort((a, b) => b.views - a.views);
-    const topPosts = sortedPosts.slice(0, 10); // Get the top 10 posts
-
-    res.status(200).json(topPosts);
-  } catch (err) {
-    console.error("Error fetching top posts:", err);
-    res.status(500).json({ error: "Internal server error", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Internal server error", details: err.message });
   }
 });
 
 // LESTEST POSTS
-
 router.get("/latest", async (req, res) => {
   try {
-    const latestPosts = await Post.find().sort({ createdAt: -1 }); // Fetch the 10 latest posts
-    const mostRecentPost = latestPosts.shift(); // Get the most recent post
-    res.status(200).json({ mostRecentPost, remainingPosts: latestPosts });
+    const latestPosts = await Post.find().sort({ createdAt: -1 });
+    res.status(200).json({ latestPosts: latestPosts });
   } catch (err) {
     console.error("Error fetching latest posts:", err);
-    res.status(500).json({ error: "Internal server error", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Internal server error", details: err.message });
   }
 });
-
-
 
 // GET POPULAR POSTS
 router.get("/popular", async (req, res) => {
   try {
     const popularPosts = await Post.find().sort({ views: -1 }); // Change limit as needed
-    res.status(200).json(popularPosts);
+    res.status(200).json({ popularPosts: popularPosts });
   } catch (err) {
     console.error("Error fetching popular posts:", err);
-    res.status(500).json({ error: "Internal server error", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Internal server error", details: err.message });
   }
 });
-
-
-// GET ALL CONTENT POSTS 
-
-// GET ALL TRENDING POSTS
-router.get("/trending/all", async (req, res) => {
-  try {
-    const fiveDaysAgo = moment().subtract(5, 'days').toDate();
-    const recentPosts = await Post.find({ createdAt: { $gte: fiveDaysAgo } });
-    const sortedPosts = recentPosts.sort((a, b) => b.views - a.views);
-
-    res.status(200).json(sortedPosts); // Return all trending posts
-  } catch (err) {
-    console.error("Error fetching all trending posts:", err);
-    res.status(500).json({ error: "Internal server error", details: err.message });
-  }
-});
-
-// GET ALL LATEST POSTS
-router.get("/latest/all", async (req, res) => {
-  try {
-    const latestPosts = await Post.find().sort({ createdAt: -1 });
-    res.status(200).json(latestPosts); // Return all latest posts
-  } catch (err) {
-    console.error("Error fetching all latest posts:", err);
-    res.status(500).json({ error: "Internal server error", details: err.message });
-  }
-});
-
-// GET ALL POPULAR POSTS
-router.get("/popular/all", async (req, res) => {
-  try {
-    const popularPosts = await Post.find().sort({ views: -1 });
-    res.status(200).json(popularPosts); // Return all popular posts
-  } catch (err) {
-    console.error("Error fetching all popular posts:", err);
-    res.status(500).json({ error: "Internal server error", details: err.message });
-  }
-});
-
-
 
 // CREATE POST
 router.post("/", async (req, res) => {
@@ -115,13 +67,13 @@ router.post("/", async (req, res) => {
   const newPost = new Post({
     ...postDetails,
     userId,
-    username
+    username,
   });
 
   try {
     const savedPost = await newPost.save();
     await User.findByIdAndUpdate(userId, {
-      $push: { postId: savedPost._id }
+      $push: { postId: savedPost._id },
     });
     res.status(200).json({
       message: "Post Created",
@@ -129,7 +81,9 @@ router.post("/", async (req, res) => {
     });
   } catch (err) {
     console.error("Error creating post:", err);
-    res.status(500).json({ error: "Internal server error", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Internal server error", details: err.message });
   }
 });
 
@@ -137,7 +91,7 @@ router.post("/", async (req, res) => {
 router.put("/single/:id", async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
-    
+
     if (!post) {
       return res.status(404).json({ message: "Post not found" });
     }
@@ -149,16 +103,18 @@ router.put("/single/:id", async (req, res) => {
     const updatedPost = await Post.findByIdAndUpdate(
       req.params.id,
       { $set: req.body },
-      { new: true }
+      { new: true },
     );
-    
+
     res.status(200).json({
       message: "Post Updated",
       updatedPost,
     });
   } catch (err) {
     console.error("Error updating post:", err);
-    res.status(500).json({ error: "Internal server error", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Internal server error", details: err.message });
   }
 });
 
@@ -176,10 +132,13 @@ router.delete("/single/:id", async (req, res) => {
     }
 
     await post.deleteOne();
+
     res.status(200).json({ message: "Post has been deleted" });
   } catch (err) {
     console.error("Error deleting post:", err);
-    res.status(500).json({ error: "Internal server error", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Internal server error", details: err.message });
   }
 });
 
@@ -190,7 +149,9 @@ router.get("/random", async (req, res) => {
     res.status(200).json(randomPosts);
   } catch (err) {
     console.error("Error fetching random posts:", err);
-    res.status(500).json({ error: "Internal server error", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Internal server error", details: err.message });
   }
 });
 
@@ -209,7 +170,9 @@ router.get("/single/:id", async (req, res) => {
     res.status(200).json(updatedPost);
   } catch (err) {
     console.error("Error fetching post:", err);
-    res.status(500).json({ error: "Internal server error", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Internal server error", details: err.message });
   }
 });
 
@@ -224,7 +187,7 @@ router.get("/", async (req, res) => {
       posts = await Post.find({ username: username }).sort({ createdAt: -1 });
     } else if (catName) {
       posts = await Post.find({
-        categories: { $in: [catName] }
+        categories: { $in: [catName] },
       }).sort({ createdAt: -1 });
     } else {
       posts = await Post.find().sort({ createdAt: -1 });
@@ -232,7 +195,9 @@ router.get("/", async (req, res) => {
     res.status(200).json(posts);
   } catch (err) {
     console.error("Error fetching all posts:", err);
-    res.status(500).json({ error: "Internal server error", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Internal server error", details: err.message });
   }
 });
 

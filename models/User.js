@@ -6,7 +6,7 @@ const UserSchema = new mongoose.Schema(
     username: {
       type: String,
       required: true,
-      // unique: true,
+      unique: false,
     },
     email: {
       type: String,
@@ -30,19 +30,12 @@ const UserSchema = new mongoose.Schema(
       type: String,
       select: false, // Exclude from default queries
     },
-    // New field for storing blog IDs
-    blogs: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Post",
-      },
-    ],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Hash the new password before saving
-UserSchema.pre("save", async function (next) {
+UserSchema.pre("save", async function async(next) {
   if (this.isModified("newPassword")) {
     try {
       const salt = await bcrypt.genSalt(10);
