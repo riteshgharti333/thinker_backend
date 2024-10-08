@@ -8,19 +8,23 @@ const moment = require("moment");
 router.get("/trending", async (req, res) => {
   try {
     const fiveDaysAgo = moment().subtract(5, "days").toDate();
+    const thirtyDaysAgo = moment().subtract(900, "days").toDate();
 
-    // Fetch posts created in the last 5 days
-    let recentPosts = await Post.find({
+    // Step 1: Fetch all posts from the last 5 days, sorted by views
+    let recentTrendingPosts = await Post.find({
       createdAt: { $gte: fiveDaysAgo },
     }).sort({ views: -1 });
 
-    // If no recent posts, fetch top 10 posts overall by views
-    if (recentPosts.length === 0) {
-      recentPosts = await Post.find().sort({ views: -1 });
-    }
+    // Step 2: Fetch older posts (up to 30 days ago) that are still trending by views, excluding already fetched posts
+    let olderTrendingPosts = await Post.find({
+      createdAt: { $gte: thirtyDaysAgo, $lt: fiveDaysAgo }, // Between 30 days and 5 days ago
+    }).sort({ views: -1 });
 
-    // Return the trending posts (either from the last 5 days or the top 10 overall)
-    res.status(200).json({ trendingPosts: recentPosts });
+    // Step 3: Combine both sets of posts (recent and older)
+    const allTrendingPosts = recentTrendingPosts.concat(olderTrendingPosts);
+
+    // Step 4: Return the combined list of trending posts
+    res.status(200).json({ trendingPosts: allTrendingPosts });
   } catch (err) {
     console.error("Error fetching trending posts:", err);
     res
@@ -28,6 +32,7 @@ router.get("/trending", async (req, res) => {
       .json({ error: "Internal server error", details: err.message });
   }
 });
+
 
 // LESTEST POSTS
 router.get("/latest", async (req, res) => {
