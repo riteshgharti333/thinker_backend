@@ -13,13 +13,15 @@ router.post("/forgot-password", async (req, res) => {
 
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    const secret = process.env.JWT_SECRET + user.password;
+    const secret = process.env.JWT_SECRET;
 
     const token = jwt.sign({ email: user.email, id: user._id }, secret, {
       expiresIn: "30m",
     });
 
-    const link = `${process.env.FRONTEND_URL}/reset-password/${user._id}/${token}`;
+    const modifiedToken = token.replace(/\./g, "_");
+
+    const link = `${process.env.FRONTEND_URL}/reset-password/${user._id}/${modifiedToken}`;
 
     var transporter = nodemailer.createTransport({
       service: "gmail",
@@ -69,7 +71,6 @@ router.post("/forgot-password", async (req, res) => {
       }
     });
 
-    console.log(link);
   } catch (error) {
     console.log(error);
   }
@@ -90,10 +91,12 @@ router.post("/reset-password/:id/:token", async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const secret = process.env.JWT_SECRET + user.password;
+    const modifiedToken = token.replace(/_/g, ".");
+
+    const secret = process.env.JWT_SECRET;
 
     try {
-      jwt.verify(token, secret);
+      jwt.verify(modifiedToken, secret);
     } catch (err) {
       console.log(err)
       return res.status(401).json({ message: "Invalid or expired token" });
