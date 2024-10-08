@@ -5,10 +5,10 @@ const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 
-
 router.post("/forgot-password", async (req, res) => {
   try {
     const { email } = req.body;
+    
     const user = await User.findOne({ email });
 
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -38,7 +38,9 @@ router.post("/forgot-password", async (req, res) => {
       html: `
         <p>Hello ${user.username || "User"},</p>
         
-        <p>We received a request to reset your password for your account associated with this email address: ${user.email}.</p>
+        <p>We received a request to reset your password for your account associated with this email address: ${
+          user.email
+        }.</p>
         
         <p>To reset your password, please click the button below:</p>
         
@@ -58,10 +60,10 @@ router.post("/forgot-password", async (req, res) => {
       `,
     };
 
-    transporter.sendMail(mailOptions, function (error, info) {
+    transporter.sendMail(mailOptions, function(error, info) {
       if (error) {
         console.log(error);
-        return res.status(500).json({ message: "Failed to send email." }); 
+        return res.status(500).json({ message: "Failed to send email." });
       } else {
         console.log("Email sent: " + info.response);
         return res.status(200).json({
@@ -70,12 +72,10 @@ router.post("/forgot-password", async (req, res) => {
         });
       }
     });
-
   } catch (error) {
     console.log(error);
   }
 });
-
 
 router.post("/reset-password/:id/:token", async (req, res) => {
   try {
@@ -87,6 +87,7 @@ router.post("/reset-password/:id/:token", async (req, res) => {
     }
 
     const user = await User.findById(id);
+
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -98,7 +99,7 @@ router.post("/reset-password/:id/:token", async (req, res) => {
     try {
       jwt.verify(modifiedToken, secret);
     } catch (err) {
-      console.log(err)
+      console.log(err);
       return res.status(401).json({ message: "Invalid or expired token" });
     }
 
@@ -122,11 +123,14 @@ router.put("/:id", async (req, res) => {
     const { currentPassword, newPassword } = req.body;
 
     const isMatch = await bcrypt.compare(currentPassword, user.password);
+
     if (!isMatch)
       return res.status(400).json({ message: "Invalid current password" });
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
+
     user.password = hashedPassword;
+
     await user.save();
 
     res.status(200).json({ message: "Password changed successfully" });
