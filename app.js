@@ -17,30 +17,36 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 
-// const corsOptions = {
-//   origin: 'http://localhost:5173', // Replace with your frontend's URL
-//   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-// };
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  process.env.FRONTEND_URL,
+];
 
-// app.use(
-//   cors({
-//       origin: [process.env.FRONTEND_URL],
-//       methods: ["GET", "POST", "PUT", "DELETE"],
-//       credentials: true,
-//   })
-// )
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        return callback(new Error("Not allowed by CORS"));
+      }
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true,
+  })
+);
 
-app.use(cors());
+app.options("*", cors());
 
 app.use("/images", express.static(path.join(__dirname, "/images")));
 
-// const PORT = process.env.PORT || 8000;
-
 mongoose
   .connect(process.env.MONGO_URL, {})
-  .then(() => console.log("DB Connection Successfull!"))
+  .then(() => console.log("DB Connection Successful!"))
   .catch((err) => {
-    console.log(err);
+    console.log("MongoDB connection error:", err);
   });
 
 const storage = multer.diskStorage({
@@ -69,5 +75,5 @@ app.get("/", (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Backend is runnning ${process.env.PORT}`);
+  console.log(`Backend is running on port ${PORT}`);
 });

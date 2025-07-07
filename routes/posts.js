@@ -206,4 +206,56 @@ router.get("/", async (req, res) => {
   }
 });
 
+
+// SEARCH POSTS
+router.get("/search", async (req, res) => {
+  try {
+      // Extract query parameters
+      const { categories, minViews, maxViews, year, keyword } = req.query;
+
+      // Build the filter object for MongoDB query
+      let filters = {};
+
+      // Filter by category or multiple categories
+      if (categories) {
+          const categoryArray = categories.split(","); // Assumes categories are comma-separated
+          filters.categories = { $in: categoryArray };
+      }
+
+      // Filter by views
+      if (minViews || maxViews) {
+          filters.views = {};
+          if (minViews) filters.views.$gte = parseInt(minViews, 10);
+          if (maxViews) filters.views.$lte = parseInt(maxViews, 10);
+      }
+
+     // Filter by year(s)
+     if (year) {
+      const yearArray = year.split(","); // Split the year parameter into an array
+      filters.createdAt = {
+          $gte: new Date(`${yearArray[0]}-01-01`), // Start of the earliest year
+          $lte: new Date(`${yearArray[yearArray.length - 1]}-12-31`), // End of the latest year
+      };
+  }
+
+      // Filter by title or description keyword
+      if (keyword) {
+          const regex = new RegExp(keyword, "i"); // Case-insensitive regex search
+          filters.$or = [
+              { title: regex },
+              { desc: regex },
+          ];
+      }
+
+      // Fetch the filtered posts
+      const posts = await Post.find(filters);
+
+      // Return the results
+      res.status(200).json(posts);
+  } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
 module.exports = router;
